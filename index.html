@@ -1,0 +1,806 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex">
+<title>注文管理ダッシュボード（デモ）｜Demoa-works</title>
+<style>
+  :root{
+    --teal:#0F6E56;
+    --teal-d:#085041;
+    --teal-l:#E1F5EE;
+    --blue:#185FA5;
+    --ink:#2C2C2A;
+    --muted:#5F5E5A;
+    --line:#E3E1D8;
+    --bg:#F7F6F1;
+    --white:#fff;
+    --amber:#BA7517;
+    --amber-l:#FAEEDA;
+    --gray:#888780;
+    --red:#A32D2D;
+    --red-l:#FCEBEB;
+    --focus:#FF5F03;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    font-family:-apple-system,"Hiragino Kaku Gothic ProN","Yu Gothic",sans-serif;
+    color:var(--ink);
+    background:var(--bg);
+    line-height:1.6;
+  }
+  .wrap{max-width:920px;margin:0 auto;padding:16px;}
+  .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0;}
+  .demo-banner{background:var(--amber-l);color:#633806;font-size:13px;text-align:center;padding:8px;border-radius:8px;margin-bottom:14px;}
+  header{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;margin-bottom:16px;}
+  .brand{display:flex;align-items:center;gap:8px;font-weight:700;color:var(--teal);font-size:18px;}
+  .brand span{font-size:12px;color:var(--white);background:var(--teal);border-radius:999px;padding:3px 10px;font-weight:500;}
+  .ico{width:16px;height:16px;display:inline-block;vertical-align:-3px;flex:0 0 auto;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;}
+  .brand .ico{width:20px;height:20px;color:var(--teal-d);}
+  h1{font-size:20px;margin:0;}
+  .sub{color:var(--muted);font-size:13px;margin-top:2px;}
+  .meta{font-size:11px;color:var(--gray);margin-top:4px;}
+  .toolbar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
+  .search{border:1px solid var(--line);border-radius:8px;padding:7px 10px;font-size:13px;background:var(--white);min-width:180px;}
+  .tabs{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin:18px 0 14px;}
+  .tab{
+    position:relative;
+    display:grid;
+    grid-template-columns:auto minmax(0,1fr);
+    align-items:center;
+    gap:10px;
+    min-height:68px;
+    border:1px solid var(--line);
+    background:var(--white);
+    border-radius:8px;
+    padding:11px 38px 11px 12px;
+    color:var(--ink);
+    cursor:pointer;
+    text-align:left;
+    box-shadow:0 2px 8px rgba(44,44,42,.04);
+  }
+  .tab:hover{border-color:var(--teal);background:#FBFFFD;}
+  .tab.on{background:var(--teal);color:var(--white);border-color:var(--teal);box-shadow:inset 0 3px 0 var(--focus),0 3px 12px rgba(15,110,86,.18);}
+  .tab .ico{width:24px;height:24px;color:currentColor;}
+  .tab-text{display:flex;flex-direction:column;gap:1px;min-width:0;}
+  .tab-main{font-size:17px;font-weight:800;line-height:1.2;letter-spacing:0;}
+  .tab-sub{font-size:11px;font-weight:700;line-height:1.25;color:var(--muted);}
+  .tab.on .tab-sub{color:rgba(255,255,255,.82);}
+  .tab-badge{position:absolute;top:8px;right:8px;display:inline-grid;place-items:center;min-width:24px;height:24px;border-radius:999px;background:var(--teal-d);color:var(--white);font-size:12px;font-weight:800;line-height:1;padding:0 7px;}
+  .tab-badge.is-empty{display:none;}
+  .tab.on .tab-badge{background:var(--white);color:var(--teal-d);}
+  .tab-badge.is-alert{background:var(--red);color:var(--white);}
+  .tab.on .tab-badge.is-alert{background:var(--red);color:var(--white);}
+  .kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:18px;}
+  .kpi{background:var(--white);border:1px solid var(--line);border-radius:8px;padding:12px;text-align:center;min-width:0;}
+  .kpi .n{font-size:22px;font-weight:700;color:var(--teal);line-height:1.2;}
+  .kpi .l{display:flex;align-items:center;justify-content:center;gap:5px;font-size:11px;color:var(--muted);margin-top:4px;white-space:nowrap;}
+  .kpi .ico{width:14px;height:14px;}
+  .panel{display:none;background:var(--white);border:1px solid var(--line);border-radius:8px;padding:16px;}
+  .panel.on{display:block;}
+  .panel h2{font-size:15px;margin:0 0 12px;color:var(--teal-d);}
+  table{width:100%;border-collapse:collapse;font-size:14px;}
+  th,td{text-align:left;padding:9px 8px;border-bottom:1px solid #EFEDE6;vertical-align:top;}
+  th{color:var(--muted);font-size:12px;font-weight:700;}
+  td.num,th.num{text-align:right;}
+  .qty{font-weight:700;color:var(--teal);}
+  .badge{display:inline-block;font-size:11px;border-radius:999px;padding:2px 9px;font-weight:700;white-space:nowrap;}
+  .b-wait{background:var(--amber-l);color:#633806;}
+  .b-order{background:#E6F1FB;color:#0C447C;}
+  .b-done{background:var(--teal-l);color:var(--teal-d);}
+  .b-cancel{background:#F1EFE8;color:var(--gray);}
+  .b-sold{background:var(--red-l);color:var(--red);}
+  .person{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:11px 4px;border-bottom:1px solid #EFEDE6;}
+  .person:last-child{border-bottom:none;}
+  .person .info{font-size:14px;min-width:0;}
+  .person .items{font-size:12px;color:var(--muted);margin-top:2px;overflow-wrap:anywhere;}
+  .person .total{font-size:12px;color:var(--teal-d);font-weight:700;margin-top:3px;}
+  .chk{display:flex;align-items:center;gap:6px;min-height:44px;font-size:13px;color:var(--teal);cursor:pointer;white-space:nowrap;font-weight:700;}
+  .chk .ico{width:15px;height:15px;}
+  .chk input{width:22px;height:22px;accent-color:var(--teal);}
+  .btn{display:inline-flex;align-items:center;justify-content:center;gap:5px;min-height:44px;font-size:12px;border:1px solid var(--teal);color:var(--teal);background:var(--white);border-radius:8px;padding:7px 11px;cursor:pointer;font-weight:700;white-space:nowrap;}
+  .btn .ico{width:15px;height:15px;}
+  .btn:hover{background:var(--teal-l);}
+  .btn-warn{border-color:var(--red);color:var(--red);}
+  .btn-warn:hover{background:var(--red-l);}
+  .link-x{display:inline-flex;align-items:center;justify-content:center;gap:4px;min-height:32px;border:0;background:transparent;padding:4px 0;font:inherit;font-size:12px;color:var(--gray);cursor:pointer;text-decoration:underline;white-space:nowrap;}
+  .link-x .ico{width:14px;height:14px;}
+  .actions{display:flex;flex-direction:column;align-items:flex-end;gap:3px;}
+  .link-safe{color:var(--teal);}
+  .link-warn{color:var(--red);}
+  .mobile-label,.qty-unit{display:none;}
+  .apo{font-size:12px;color:#633806;background:var(--amber-l);border-radius:6px;padding:7px 9px;margin-top:5px;}
+  .sold-person{align-items:flex-start;}
+  .sold-person .info{flex:1 1 auto;}
+  .sold-message{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;align-items:start;margin-top:5px;}
+  .sold-message .apo{margin-top:0;overflow-wrap:anywhere;}
+  .copy-btn{width:44px;min-height:44px;border:1px solid var(--line);background:#FAFAF7;color:var(--teal);border-radius:8px;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;}
+  .copy-btn:hover{border-color:var(--teal);background:var(--teal-l);}
+  .copy-btn .ico{width:18px;height:18px;}
+  .done-row{opacity:.45;}
+  .note{font-size:12px;color:var(--muted);margin-top:10px;}
+  .empty{font-size:13px;color:var(--muted);padding:8px 2px;}
+  .toast{position:fixed;left:50%;bottom:18px;transform:translateX(-50%);background:var(--teal-d);color:#fff;border-radius:8px;padding:10px 14px;font-size:13px;box-shadow:0 8px 24px rgba(0,0,0,.18);display:none;z-index:10;}
+  button:focus-visible,
+  input:focus-visible,
+  a:focus-visible{
+    outline:3px solid var(--focus);
+    outline-offset:2px;
+  }
+  footer{font-size:11px;color:var(--gray);text-align:center;margin:20px 0;border-top:1px solid var(--line);padding-top:12px;}
+  @media(max-width:680px){
+    .wrap{padding:12px;}
+    header{display:block;}
+    .toolbar{margin-top:10px;}
+    .kpis{grid-template-columns:repeat(2,1fr);}
+    h1{font-size:18px;}
+    .tabs{grid-template-columns:repeat(2,1fr);gap:8px;margin:14px 0 12px;}
+    .tab{min-height:64px;padding:10px 36px 10px 11px;}
+    .panel{padding:13px;}
+    table{font-size:13px;}
+    th,td{padding:8px 6px;}
+    .hide-sm{display:none;}
+  }
+  @media(max-width:430px){
+    .wrap{padding:10px;}
+    .brand{font-size:16px;}
+    h1{font-size:17px;}
+    .sub{font-size:12px;}
+    .kpis{gap:8px;margin-bottom:12px;}
+    .kpi{padding:9px 7px;}
+    .kpi .n{font-size:19px;}
+    .tabs{gap:7px;}
+    .tab{min-height:62px;padding:9px 33px 9px 10px;gap:8px;}
+    .tab .ico{width:22px;height:22px;}
+    .tab-main{font-size:16px;}
+    .tab-sub{font-size:10px;}
+    .tab-badge{top:7px;right:7px;min-width:22px;height:22px;font-size:11px;padding:0 6px;}
+    .btn{min-height:44px;}
+    .panel{padding:10px;border-radius:6px;}
+    .sold-person{flex-direction:column;align-items:stretch;gap:8px;}
+    .sold-person .chk{align-self:flex-start;}
+    #panel-agg table,
+    #panel-agg thead,
+    #panel-agg tbody,
+    #panel-agg tr,
+    #panel-agg td{
+      display:block;
+      width:100%;
+    }
+    #panel-agg thead{display:none;}
+    #panel-agg tr{
+      display:grid;
+      grid-template-columns:minmax(0,1fr) auto;
+      grid-template-areas:
+        "product product"
+        "size qty"
+        "actions actions";
+      gap:8px 10px;
+      padding:11px 0;
+      border-bottom:1px solid #EFEDE6;
+    }
+    #panel-agg td{
+      padding:0;
+      border-bottom:none;
+      min-width:0;
+    }
+    #panel-agg td:nth-child(1){grid-area:product;overflow-wrap:anywhere;}
+    #panel-agg td:nth-child(2){grid-area:size;font-size:12px;color:var(--muted);}
+    #panel-agg td:nth-child(3){
+      grid-area:qty;
+      justify-self:start;
+      display:inline-flex;
+      align-items:baseline;
+      gap:4px;
+      width:auto;
+      border-radius:999px;
+      background:var(--teal-l);
+      color:var(--teal-d);
+      padding:5px 10px;
+      text-align:left;
+      font-weight:800;
+    }
+    #panel-agg td:nth-child(3) .mobile-label,
+    #panel-agg td:nth-child(3) .qty-unit{
+      display:inline;
+      font-size:11px;
+      font-weight:700;
+      color:var(--teal-d);
+    }
+    #panel-agg td:nth-child(3) .qty-num{font-size:18px;line-height:1;}
+    #panel-agg td:nth-child(4){grid-area:actions;text-align:left;}
+    #panel-agg td:nth-child(4) .btn{margin:0 6px 6px 0;}
+    #panel-detail .detail-table,
+    #panel-detail .detail-table thead,
+    #panel-detail .detail-table tbody,
+    #panel-detail .detail-table tr,
+    #panel-detail .detail-table td{
+      display:block;
+      width:100%;
+    }
+    #panel-detail .detail-table thead{display:none;}
+    #panel-detail .detail-table tr{
+      display:grid;
+      grid-template-columns:minmax(0,1fr) auto;
+      grid-template-areas:
+        "name status"
+        "product product"
+        "size qty"
+        "actions actions";
+      gap:8px 10px;
+      padding:11px 0;
+      border-bottom:1px solid #EFEDE6;
+    }
+    #panel-detail .detail-table td{
+      padding:0;
+      border-bottom:none;
+      min-width:0;
+    }
+    #panel-detail .detail-table td.hide-sm{display:none;}
+    #panel-detail .detail-name{grid-area:name;font-weight:700;line-height:1.45;}
+    #panel-detail .detail-product{grid-area:product;font-size:14px;line-height:1.45;overflow-wrap:anywhere;}
+    #panel-detail .detail-status{grid-area:status;justify-self:end;}
+    #panel-detail .detail-size,
+    #panel-detail .detail-qty{
+      display:inline-flex;
+      align-items:center;
+      gap:5px;
+      font-size:12px;
+      color:var(--muted);
+      padding:3px 0;
+    }
+    #panel-detail .detail-size{grid-area:size;}
+    #panel-detail .detail-qty{grid-area:qty;justify-self:start;text-align:left;}
+    #panel-detail .detail-size .mobile-label,
+    #panel-detail .detail-qty .mobile-label{
+      display:inline;
+      color:var(--gray);
+      font-weight:700;
+    }
+    #panel-detail .mobile-label::after{content:": ";}
+    #panel-detail .detail-actions{grid-area:actions;}
+    #panel-detail .actions{
+      flex-direction:row;
+      flex-wrap:wrap;
+      justify-content:flex-start;
+      align-items:center;
+      gap:8px 12px;
+    }
+    #panel-detail .link-x{min-height:44px;font-size:13px;line-height:1.5;}
+    #panel-detail .badge{font-size:11px;padding:3px 9px;}
+    .items{font-size:11px;}
+  }
+  @media(max-width:340px){
+    .wrap{padding:8px;}
+    .search{min-width:150px;width:100%;}
+    .toolbar .btn{width:100%;}
+    #panel-agg tr{
+      grid-template-columns:1fr;
+      grid-template-areas:
+        "product"
+        "size"
+        "qty"
+        "actions";
+    }
+    #panel-detail .detail-table tr{
+      grid-template-columns:1fr;
+      grid-template-areas:
+        "status"
+        "name"
+        "product"
+        "size"
+        "qty"
+        "actions";
+    }
+    #panel-detail .detail-status{justify-self:start;}
+  }
+</style>
+</head>
+<body>
+<div class="wrap" id="app">
+  <div class="demo-banner">本ページはポートフォリオ用のデモです。データはすべて架空で、外部シートには保存されません。</div>
+
+  <header>
+    <div>
+      <div class="brand">
+        <svg class="ico" aria-hidden="true" viewBox="0 0 24 24"><path d="M4 7h16"/><path d="M4 12h16"/><path d="M4 17h10"/><rect x="3" y="4" width="18" height="16" rx="2"/></svg>
+        Demoa-works <span>注文管理</span>
+      </div>
+      <h1>注文管理ダッシュボード</h1>
+      <div class="sub">発注する商品、すべての注文、渡す人、完売連絡を一画面で管理します。</div>
+      <div class="meta" id="lastUpdated">デモデータ</div>
+    </div>
+    <div class="toolbar">
+      <label class="sr-only" for="keyword">名前・商品で検索</label>
+      <input class="search" id="keyword" type="search" placeholder="名前・商品で検索" autocomplete="off" oninput="render()">
+      <button class="btn" id="refreshBtn" type="button" onclick="resetDemo()" aria-label="デモを初期状態に戻す"><svg class="ico" aria-hidden="true" viewBox="0 0 24 24"><path d="M21 12a9 9 0 0 1-15.4 6.4"/><path d="M3 12A9 9 0 0 1 18.4 5.6"/><path d="M18 2v4h4"/><path d="M6 22v-4H2"/></svg><span>リセット</span></button>
+    </div>
+  </header>
+
+  <div class="tabs" role="tablist" aria-label="注文管理ビュー">
+    <button class="tab on" id="tab-agg" role="tab" aria-selected="true" aria-controls="panel-agg" data-t="agg" type="button" onclick="switchTab('agg')" onkeydown="handleTabKey(event)">
+      <svg class="ico" aria-hidden="true" viewBox="0 0 24 24"><path d="M21 16V8a2 2 0 0 0-1-1.73L13 2.27a2 2 0 0 0-2 0L4 6.27A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/><path d="M3.3 7 12 12l8.7-5"/><path d="M12 22V12"/></svg>
+      <span class="tab-text"><span class="tab-main">発注</span><span class="tab-sub">商品別</span></span>
+      <span class="tab-badge is-empty" id="tabAggCount" aria-hidden="true"></span>
+    </button>
+    <button class="tab" id="tab-detail" role="tab" aria-selected="false" aria-controls="panel-detail" data-t="detail" type="button" tabindex="-1" onclick="switchTab('detail')" onkeydown="handleTabKey(event)">
+      <svg class="ico" aria-hidden="true" viewBox="0 0 24 24"><path d="M8 6h13"/><path d="M8 12h13"/><path d="M8 18h13"/><path d="M3 6h.01"/><path d="M3 12h.01"/><path d="M3 18h.01"/></svg>
+      <span class="tab-text"><span class="tab-main">注文</span><span class="tab-sub">明細</span></span>
+      <span class="tab-badge" id="tabDetailCount" aria-hidden="true"></span>
+    </button>
+    <button class="tab" id="tab-deliver" role="tab" aria-selected="false" aria-controls="panel-deliver" data-t="deliver" type="button" tabindex="-1" onclick="switchTab('deliver')" onkeydown="handleTabKey(event)">
+      <svg class="ico" aria-hidden="true" viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-8 0v2"/><circle cx="12" cy="7" r="4"/><path d="m17 11 2 2 4-4"/></svg>
+      <span class="tab-text"><span class="tab-main">配布</span><span class="tab-sub">渡す人</span></span>
+      <span class="tab-badge is-empty" id="tabDeliverCount" aria-hidden="true"></span>
+    </button>
+    <button class="tab" id="tab-sold" role="tab" aria-selected="false" aria-controls="panel-sold" data-t="sold" type="button" tabindex="-1" onclick="switchTab('sold')" onkeydown="handleTabKey(event)">
+      <svg class="ico" aria-hidden="true" viewBox="0 0 24 24"><path d="M21 15a4 4 0 0 1-4 4H7l-4 4V7a4 4 0 0 1 4-4h10a4 4 0 0 1 4 4Z"/><path d="M8 9h8"/><path d="M8 13h5"/></svg>
+      <span class="tab-text"><span class="tab-main">完売</span><span class="tab-sub">連絡</span></span>
+      <span class="tab-badge is-alert is-empty" id="tabSoldCount" aria-hidden="true"></span>
+    </button>
+  </div>
+
+  <div class="kpis">
+    <div class="kpi"><div class="n" id="kpiTotal">0</div><div class="l"><svg class="ico" aria-hidden="true" viewBox="0 0 24 24"><path d="M8 6h13"/><path d="M8 12h13"/><path d="M8 18h13"/><path d="M3 6h.01"/><path d="M3 12h.01"/><path d="M3 18h.01"/></svg><span>有効注文数</span></div></div>
+    <div class="kpi"><div class="n" id="kpiSales">¥0</div><div class="l"><svg class="ico" aria-hidden="true" viewBox="0 0 24 24"><path d="M12 2v20"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7H14a3.5 3.5 0 0 1 0 7H6"/></svg><span>売上（見込・税込）</span></div></div>
+    <div class="kpi"><div class="n" id="kpiWait">0</div><div class="l"><svg class="ico" aria-hidden="true" viewBox="0 0 24 24"><path d="M12 6v6l4 2"/><circle cx="12" cy="12" r="9"/></svg><span>未発注</span></div></div>
+    <div class="kpi"><div class="n" id="kpiDeliver">0</div><div class="l"><svg class="ico" aria-hidden="true" viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-8 0v2"/><circle cx="12" cy="7" r="4"/><path d="M20 8v6"/><path d="M23 11h-6"/></svg><span>未配布者</span></div></div>
+  </div>
+
+  <section class="panel on" id="panel-agg" role="tabpanel" aria-labelledby="tab-agg">
+    <h2>発注する商品</h2>
+    <table>
+      <thead><tr><th>商品</th><th>サイズ</th><th class="num">発注数</th><th></th></tr></thead>
+      <tbody id="aggBody"></tbody>
+    </table>
+    <div class="note">商品とサイズ単位で未発注分を集計します。完売にすると対象者が完売タブへ移動し、配布リストから外れます。</div>
+  </section>
+
+  <section class="panel" id="panel-detail" role="tabpanel" aria-labelledby="tab-detail" hidden>
+    <h2>すべての注文</h2>
+    <table class="detail-table">
+      <thead>
+        <tr>
+          <th>注文者</th>
+          <th class="hide-sm">商品番号</th>
+          <th>商品</th>
+          <th>サイズ</th>
+          <th class="num">数量</th>
+          <th class="num hide-sm">金額</th>
+          <th>状態</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody id="detailBody"></tbody>
+    </table>
+    <div class="note">キャンセル、完売、配布済などの状態確認をまとめたデモです。</div>
+  </section>
+
+  <section class="panel" id="panel-deliver" role="tabpanel" aria-labelledby="tab-deliver" hidden>
+    <h2>渡す人</h2>
+    <div id="deliverBody"></div>
+    <div class="note">同じ注文者の未配布商品は1つのカードにまとめ、合計点数を表示します。</div>
+  </section>
+
+  <section class="panel" id="panel-sold" role="tabpanel" aria-labelledby="tab-sold" hidden>
+    <h2>完売連絡</h2>
+    <div id="soldBody"></div>
+    <div class="note">コピーアイコンでお詫び文をコピーできます。連絡済にすると薄く表示します。</div>
+  </section>
+
+  <footer>Demoa-works ｜ 注文・予約・申込管理の手作業を、スマホで迷わず使える仕組みにします。</footer>
+</div>
+<div class="toast" id="toast" role="status" aria-live="polite" aria-atomic="true"></div>
+
+<script>
+  var INITIAL_ORDERS = [
+    {name:'山田 花子',productNo:'P001',productName:'タンクトップ',size:'M',qty:1,amount:3200,ordered:false,delivered:false,canceled:false,soldoutWaiting:false,soldoutNotified:false,memo:''},
+    {name:'佐藤 美咲',productNo:'P002',productName:'レギンス',size:'S',qty:1,amount:5800,ordered:false,delivered:false,canceled:false,soldoutWaiting:false,soldoutNotified:false,memo:''},
+    {name:'佐藤 美咲',productNo:'P003',productName:'Tシャツ',size:'S',qty:2,amount:3500,ordered:false,delivered:false,canceled:false,soldoutWaiting:true,soldoutNotified:false,memo:''},
+    {name:'田中 優子',productNo:'P004',productName:'ブラトップ',size:'M',qty:1,amount:4800,ordered:true,delivered:false,canceled:false,soldoutWaiting:false,soldoutNotified:false,memo:''},
+    {name:'鈴木 あゆみ',productNo:'P005',productName:'ソックス',size:'フリー',qty:3,amount:1200,ordered:false,delivered:false,canceled:false,soldoutWaiting:false,soldoutNotified:false,memo:''},
+    {name:'高橋 さくら',productNo:'P002',productName:'レギンス',size:'M',qty:1,amount:5800,ordered:false,delivered:false,canceled:false,soldoutWaiting:false,soldoutNotified:false,memo:''},
+    {name:'高橋 さくら',productNo:'P001',productName:'タンクトップ',size:'M',qty:1,amount:3200,ordered:false,delivered:false,canceled:false,soldoutWaiting:false,soldoutNotified:false,memo:''},
+    {name:'伊藤 まり',productNo:'P003',productName:'Tシャツ',size:'L',qty:1,amount:3500,ordered:true,delivered:true,canceled:false,soldoutWaiting:false,soldoutNotified:false,memo:''},
+    {name:'渡辺 ゆい',productNo:'P006',productName:'ショートパンツ',size:'S',qty:1,amount:3900,ordered:false,delivered:false,canceled:false,soldoutWaiting:false,soldoutNotified:false,memo:''},
+    {name:'中村 えり',productNo:'P004',productName:'ブラトップ',size:'S',qty:1,amount:4800,ordered:false,delivered:false,canceled:true,soldoutWaiting:false,soldoutNotified:false,memo:'本人キャンセル'},
+    {name:'小林 なお',productNo:'P001',productName:'タンクトップ',size:'S',qty:2,amount:3200,ordered:false,delivered:false,canceled:false,soldoutWaiting:false,soldoutNotified:false,memo:''},
+    {name:'加藤 ひろ',productNo:'P005',productName:'ソックス',size:'フリー',qty:1,amount:1200,ordered:true,delivered:false,canceled:false,soldoutWaiting:false,soldoutNotified:false,memo:''}
+  ];
+  var state = {
+    orders: JSON.parse(JSON.stringify(INITIAL_ORDERS)),
+    activeTab: 'agg'
+  };
+  var aggRows = [];
+  var detailRows = [];
+  var deliveryGroups = [];
+  var soldRows = [];
+
+  function switchTab(tab){
+    state.activeTab = tab;
+    document.querySelectorAll('.tab').forEach(function(el){
+      var active = el.dataset.t === tab;
+      el.classList.toggle('on', active);
+      el.setAttribute('aria-selected', active ? 'true' : 'false');
+      el.tabIndex = active ? 0 : -1;
+    });
+    document.querySelectorAll('.panel').forEach(function(el){
+      var active = el.id === 'panel-' + tab;
+      el.classList.toggle('on', active);
+      el.hidden = !active;
+    });
+  }
+
+  function handleTabKey(event){
+    var keys = ['ArrowRight', 'ArrowLeft', 'Home', 'End'];
+    if (keys.indexOf(event.key) === -1) return;
+    event.preventDefault();
+    var tabs = Array.prototype.slice.call(document.querySelectorAll('[role="tab"]'));
+    var current = tabs.indexOf(event.currentTarget);
+    var next = current;
+    if (event.key === 'ArrowRight') next = (current + 1) % tabs.length;
+    if (event.key === 'ArrowLeft') next = (current - 1 + tabs.length) % tabs.length;
+    if (event.key === 'Home') next = 0;
+    if (event.key === 'End') next = tabs.length - 1;
+    tabs[next].focus();
+    switchTab(tabs[next].dataset.t);
+  }
+
+  function render(){
+    var filtered = filteredOrders();
+    renderKpis();
+    renderAgg(filtered);
+    renderDeliver(filtered);
+    renderSold(filtered);
+    renderDetail(filtered);
+  }
+
+  function renderKpis(){
+    var active = state.orders.filter(function(o){ return !o.canceled; });
+    var totalQty = active.reduce(function(sum, o){ return sum + Number(o.qty || 0); }, 0);
+    var sales = active.filter(function(o){ return !o.soldoutWaiting; }).reduce(function(sum, o){ return sum + Number(o.amount || 0) * Number(o.qty || 0); }, 0);
+    var waitQty = active.filter(function(o){ return !o.ordered && !o.delivered && !o.soldoutWaiting; }).reduce(function(sum, o){ return sum + Number(o.qty || 0); }, 0);
+    var deliveryCount = groupDeliveryRows(active.filter(function(o){ return !o.delivered && !o.soldoutWaiting; })).length;
+    var soldoutCount = active.filter(function(o){ return o.soldoutWaiting && !o.soldoutNotified; }).length;
+    document.getElementById('kpiTotal').textContent = totalQty;
+    document.getElementById('kpiSales').textContent = usd(sales);
+    document.getElementById('kpiWait').textContent = waitQty;
+    document.getElementById('kpiDeliver').textContent = deliveryCount;
+    setTabBadge('tabAggCount', waitQty);
+    setTabBadge('tabDetailCount', totalQty);
+    setTabBadge('tabDeliverCount', deliveryCount);
+    setTabBadge('tabSoldCount', soldoutCount);
+    document.getElementById('tab-agg').setAttribute('aria-label', '発注 商品別 未発注 ' + waitQty + '件');
+    document.getElementById('tab-detail').setAttribute('aria-label', '注文 明細 有効注文 ' + totalQty + '件');
+    document.getElementById('tab-deliver').setAttribute('aria-label', '配布 渡す人 未配布 ' + deliveryCount + '人');
+    document.getElementById('tab-sold').setAttribute('aria-label', '完売 連絡 未連絡 ' + soldoutCount + '件');
+  }
+
+  function setTabBadge(id, count){
+    var el = document.getElementById(id);
+    el.textContent = count || '';
+    el.classList.toggle('is-empty', !count);
+  }
+
+  function renderAgg(orders){
+    var grouped = {};
+    orders.forEach(function(o){
+      if (o.canceled || o.soldoutWaiting || o.ordered) return;
+      var key = o.productNo + '|' + o.size;
+      if (!grouped[key]) grouped[key] = { productNo: o.productNo, productName: o.productName, size: o.size, qty: 0 };
+      grouped[key].qty += Number(o.qty || 0);
+    });
+    aggRows = Object.keys(grouped).sort().map(function(key){ return grouped[key]; });
+    var html = aggRows.map(function(row, index){
+      return '<tr>'
+        + '<td><strong>' + esc(row.productNo) + '</strong><br><span class="items">' + esc(row.productName) + '</span></td>'
+        + '<td>' + esc(row.size) + '</td>'
+        + '<td class="num qty" aria-label="' + escAttr('発注数 ' + row.qty + '点') + '"><span class="mobile-label">発注数</span><span class="qty-num">' + esc(row.qty) + '</span><span class="qty-unit">点</span></td>'
+        + '<td class="num" style="white-space:nowrap">'
+        + '<button class="btn" type="button" onclick="orderGroup(' + index + ')" aria-label="' + escAttr(row.productNo + ' / ' + row.size + ' を発注済にする') + '">' + icon('check') + '<span>発注済にする</span></button> '
+        + '<button class="btn btn-warn" type="button" onclick="soldoutGroup(' + index + ')" aria-label="' + escAttr(row.productNo + ' / ' + row.size + ' を完売連絡へ移動する') + '">' + icon('alert') + '<span>完売へ</span></button>'
+        + '</td>'
+        + '</tr>';
+    }).join('');
+    document.getElementById('aggBody').innerHTML = html || '<tr><td colspan="4" class="empty">未発注はありません</td></tr>';
+  }
+
+  function renderDeliver(orders){
+    var rows = orders.filter(function(o){ return !o.canceled && !o.delivered && !o.soldoutWaiting; });
+    var groups = groupDeliveryRows(rows);
+    deliveryGroups = groups;
+    var html = groups.map(function(group, index){
+      var itemHtml = group.items.map(function(o){
+        return '<div class="items">' + esc(o.productName) + ' / ' + esc(o.size) + ' x ' + esc(o.qty) + '</div>';
+      }).join('');
+      return '<div class="person">'
+        + '<div class="info">' + esc(group.name)
+        + itemHtml
+        + '<div class="total">合計 ' + esc(group.totalQty) + '点</div></div>'
+        + '<label class="chk"><input type="checkbox" aria-label="' + escAttr(group.name + '様の表示中明細を配布済にする') + '" onchange="toggleDeliverGroup(' + index + ', this.checked)">' + icon('box') + '<span>配布済</span></label>'
+        + '</div>';
+    }).join('');
+    document.getElementById('deliverBody').innerHTML = html || '<div class="empty">未配布はありません</div>';
+  }
+
+  function renderSold(orders){
+    var rows = orders.filter(function(o){ return !o.canceled && o.soldoutWaiting; });
+    soldRows = rows;
+    var html = rows.map(function(o, index){
+      var message = soldoutMessage(o);
+      return '<div class="person sold-person' + (o.soldoutNotified ? ' done-row' : '') + '" data-sold-index="' + index + '">'
+        + '<div class="info">' + esc(o.name)
+        + '<div class="items">' + esc(o.productName) + ' / ' + esc(o.size) + ' x ' + esc(o.qty) + '</div>'
+        + '<div class="sold-message"><div class="apo">' + esc(message) + '</div>'
+        + '<button class="copy-btn" type="button" onclick="copySoldoutMessage(' + index + ')" aria-label="' + escAttr(o.name + '様への完売連絡文をコピー') + '" title="コピー">' + icon('copy') + '</button></div></div>'
+        + '<label class="chk"><input type="checkbox" aria-label="' + escAttr(o.name + '様の完売連絡を連絡済にする') + '" ' + (o.soldoutNotified ? 'checked' : '') + ' onchange="toggleNotifySold(' + index + ', this.checked)">' + icon('message') + '<span>連絡済</span></label>'
+        + '</div>';
+    }).join('');
+    document.getElementById('soldBody').innerHTML = html || '<div class="empty">現在、完売対応はありません。</div>';
+  }
+
+  function renderDetail(orders){
+    detailRows = orders;
+    var html = detailRows.map(function(o, index){
+      return '<tr' + (o.canceled ? ' style="opacity:.5"' : '') + '>'
+        + '<td class="detail-name">' + esc(o.name) + '</td>'
+        + '<td class="hide-sm">' + esc(o.productNo) + '</td>'
+        + '<td class="detail-product">' + productCell(o) + '</td>'
+        + '<td class="detail-size"><span class="mobile-label">サイズ</span>' + esc(o.size) + '</td>'
+        + '<td class="num detail-qty"><span class="mobile-label">数量</span>' + esc(o.qty) + '</td>'
+        + '<td class="num hide-sm">' + usd((o.amount || 0) * (o.qty || 0)) + '</td>'
+        + '<td class="detail-status">' + statusBadge(o) + '</td>'
+        + '<td class="detail-actions">' + actionLink(o, index) + '</td>'
+        + '</tr>';
+    }).join('');
+    document.getElementById('detailBody').innerHTML = html || '<tr><td colspan="8" class="empty">該当する明細はありません</td></tr>';
+  }
+
+  function productCell(o){
+    var html = esc(o.productName);
+    if (o.memo) html += '<div class="items">メモ: ' + esc(o.memo) + '</div>';
+    return html;
+  }
+
+  function statusBadge(o){
+    if (o.canceled) return '<span class="badge b-cancel">キャンセル</span>';
+    if (o.soldoutWaiting) return '<span class="badge b-sold">' + (o.soldoutNotified ? '完売・連絡済' : '完売・要連絡') + '</span>';
+    if (o.delivered) return '<span class="badge b-done">配布済</span>';
+    if (o.ordered) return '<span class="badge b-order">発注済</span>';
+    return '<span class="badge b-wait">未発注</span>';
+  }
+
+  function actionLink(o, index){
+    var links = [];
+    if (o.canceled) {
+      links.push(actionButton('取消を戻す', 'link-safe', 'toggleCancel(' + index + ', false)'));
+      return '<div class="actions">' + links.join('') + '</div>';
+    }
+    if (o.soldoutWaiting) {
+      links.push(actionButton('完売解除', 'link-safe', 'clearSoldout(' + index + ')'));
+    } else if (o.ordered && !o.delivered) {
+      links.push(actionButton('未発注へ戻す', 'link-safe', 'undoOrder(' + index + ')'));
+      links.push(actionButton('完売へ', 'link-warn', 'soldoutDetail(' + index + ')'));
+    }
+    links.push(actionButton('取消', '', 'toggleCancel(' + index + ', true)'));
+    return '<div class="actions">' + links.join('') + '</div>';
+  }
+
+  function actionButton(label, className, handler){
+    return '<button type="button" class="link-x ' + className + '" onclick="' + handler + '">' + icon(iconForAction(label)) + '<span>' + esc(label) + '</span></button>';
+  }
+
+  function iconForAction(label){
+    if (label.indexOf('戻す') !== -1 || label.indexOf('解除') !== -1) return 'undo';
+    if (label.indexOf('完売') !== -1) return 'alert';
+    if (label.indexOf('取消') !== -1) return 'x';
+    return 'check';
+  }
+
+  function orderGroup(index){
+    var row = aggRows[index];
+    if (!row) return;
+    state.orders.forEach(function(o){
+      if (!o.canceled && !o.soldoutWaiting && !o.ordered && o.productNo === row.productNo && o.size === row.size) o.ordered = true;
+    });
+    toast('発注済にしました');
+    render();
+  }
+
+  function soldoutGroup(index){
+    var row = aggRows[index];
+    if (!row) return;
+    state.orders.forEach(function(o){
+      if (!o.canceled && !o.ordered && !o.delivered && o.productNo === row.productNo && o.size === row.size) {
+        o.soldoutWaiting = true;
+        o.ordered = false;
+      }
+    });
+    toast('完売対応に移動しました');
+    switchTab('sold');
+    render();
+  }
+
+  function toggleDeliverGroup(index, checked){
+    var group = deliveryGroups[index];
+    if (!group) return;
+    group.items.forEach(function(item){
+      item.delivered = checked;
+      if (checked) item.ordered = true;
+    });
+    toast(checked ? group.name + '様の明細を配布済にしました' : group.name + '様の明細を未配布に戻しました');
+    render();
+  }
+
+  function toggleNotifySold(index, checked){
+    var row = soldRows[index];
+    if (!row) return;
+    row.soldoutNotified = checked;
+    toast(checked ? '連絡済にしました' : '未連絡に戻しました');
+    render();
+  }
+
+  function undoOrder(index){
+    var row = detailRows[index];
+    if (!row) return;
+    row.ordered = false;
+    row.delivered = false;
+    toast('未発注へ戻しました');
+    render();
+  }
+
+  function soldoutDetail(index){
+    var row = detailRows[index];
+    if (!row) return;
+    row.soldoutWaiting = true;
+    row.ordered = false;
+    row.delivered = false;
+    toast('完売対応に移動しました');
+    switchTab('sold');
+    render();
+  }
+
+  function clearSoldout(index){
+    var row = detailRows[index];
+    if (!row) return;
+    row.soldoutWaiting = false;
+    row.soldoutNotified = false;
+    toast('完売対応を解除しました');
+    render();
+  }
+
+  function toggleCancel(index, canceled){
+    var row = detailRows[index];
+    if (!row) return;
+    row.canceled = canceled;
+    toast(canceled ? 'キャンセル済にしました' : 'キャンセルを戻しました');
+    render();
+  }
+
+  function resetDemo(){
+    state.orders = JSON.parse(JSON.stringify(INITIAL_ORDERS));
+    document.getElementById('keyword').value = '';
+    switchTab('agg');
+    toast('デモを初期状態に戻しました');
+    render();
+  }
+
+  function copySoldoutMessage(index){
+    var row = soldRows[index];
+    if (!row) return;
+    copyText(soldoutMessage(row), function(){
+      toast('完売連絡文をコピーしました');
+    }, function(){
+      selectSoldoutMessage(index);
+      toast('文面を選択しました。コピーしてください');
+    });
+  }
+
+  function soldoutMessage(o){
+    return o.name + '様、' + o.productName + '（' + o.size + '）は完売のため、今回はご用意できませんでした。誠に申し訳ございません。';
+  }
+
+  function copyText(text, success, failure){
+    var clipboard = window.navigator && window.navigator.clipboard;
+    if (clipboard && window.isSecureContext !== false) {
+      clipboard.writeText(text).then(success).catch(function(){ legacyCopyText(text, success, failure); });
+      return;
+    }
+    legacyCopyText(text, success, failure);
+  }
+
+  function legacyCopyText(text, success, failure){
+    var textarea = document.createElement('textarea');
+    textarea.value = text;
+    textarea.setAttribute('readonly', '');
+    textarea.style.position = 'fixed';
+    textarea.style.left = '-9999px';
+    textarea.style.top = '0';
+    document.body.appendChild(textarea);
+    textarea.focus();
+    textarea.select();
+    textarea.setSelectionRange(0, textarea.value.length);
+    try {
+      document.execCommand('copy') ? success() : failure();
+    } catch (err) {
+      failure();
+    }
+    document.body.removeChild(textarea);
+  }
+
+  function selectSoldoutMessage(index){
+    var el = document.querySelector('[data-sold-index="' + index + '"] .apo');
+    if (!el || !window.getSelection || !document.createRange) return;
+    var range = document.createRange();
+    range.selectNodeContents(el);
+    var selection = window.getSelection();
+    selection.removeAllRanges();
+    selection.addRange(range);
+  }
+
+  function filteredOrders(){
+    var q = document.getElementById('keyword').value.trim().toLowerCase();
+    if (!q) return state.orders;
+    return state.orders.filter(function(o){
+      return [o.name, o.productNo, o.productName, o.size, o.memo].join(' ').toLowerCase().indexOf(q) !== -1;
+    });
+  }
+
+  function groupDeliveryRows(rows){
+    var map = {};
+    rows.forEach(function(o){
+      var key = normalizeName(o.name);
+      if (!map[key]) map[key] = { name: o.name, items: [], totalQty: 0 };
+      map[key].items.push(o);
+      map[key].totalQty += Number(o.qty || 0);
+    });
+    return Object.keys(map).sort(function(a, b){
+      return map[a].name.localeCompare(map[b].name, 'ja');
+    }).map(function(key){ return map[key]; });
+  }
+
+  function normalizeName(name){
+    return String(name || '').replace(/\s+/g, '');
+  }
+
+  function toast(message){
+    var el = document.getElementById('toast');
+    el.textContent = message;
+    el.style.display = 'block';
+    clearTimeout(toast.timer);
+    toast.timer = setTimeout(function(){ el.style.display = 'none'; }, 1800);
+  }
+
+  function usd(n){
+    return '¥' + Number(n || 0).toLocaleString('ja-JP');
+  }
+
+  function esc(v){
+    return String(v == null ? '' : v).replace(/[&<>"']/g, function(c){
+      return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];
+    });
+  }
+
+  function escAttr(v){
+    return esc(v).replace(/`/g, '&#96;');
+  }
+
+  function icon(name){
+    var paths = {
+      check: '<path d="M20 6 9 17l-5-5"/>',
+      alert: '<path d="m21.7 18-8-14a2 2 0 0 0-3.4 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.7-3Z"/><path d="M12 9v4"/><path d="M12 17h.01"/>',
+      undo: '<path d="M9 14 4 9l5-5"/><path d="M4 9h10a6 6 0 0 1 0 12h-1"/>',
+      x: '<path d="M18 6 6 18"/><path d="m6 6 12 12"/>',
+      box: '<path d="M21 16V8a2 2 0 0 0-1-1.73L13 2.27a2 2 0 0 0-2 0L4 6.27A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/><path d="M3.3 7 12 12l8.7-5"/><path d="M12 22V12"/>',
+      message: '<path d="M21 15a4 4 0 0 1-4 4H7l-4 4V7a4 4 0 0 1 4-4h10a4 4 0 0 1 4 4Z"/><path d="M8 10h8"/><path d="M8 14h5"/>',
+      copy: '<rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2"/>'
+    };
+    return '<svg class="ico" aria-hidden="true" viewBox="0 0 24 24">' + (paths[name] || paths.check) + '</svg>';
+  }
+
+  render();
+</script>
+</body>
+</html>
